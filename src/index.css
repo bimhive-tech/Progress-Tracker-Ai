@@ -1,0 +1,101 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@theme {
+  --breakpoint-xs: 30rem;
+  --breakpoint-wide: 87.5rem;
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-canvas: #f4f3f0;
+  --color-surface: #ffffff;
+  --color-subtle: #faf9f7;
+  --color-sand: #efebe3;
+  --color-line: #ece9e4;
+  --color-line-strong: #dcd8d0;
+  --color-ink: #1b1a17;
+  --color-ink-soft: #3b3934;
+  --color-muted: #77736b;
+  --color-faint: #a7a299;
+
+  --color-gold: #b39c66;
+  --color-gold-strong: #988249;
+  --color-gold-soft: #f4eedf;
+  --color-gold-wash: #faf7f0;
+
+  --color-success: #2f7d3b;
+  --color-success-soft: #e7f2e7;
+  --color-danger: #c63b30;
+  --color-danger-soft: #fcebe9;
+
+  --shadow-card: 0 1px 2px rgb(30 26 20 / 0.03), 0 10px 30px -18px rgb(30 26 20 / 0.12);
+  --shadow-pop: 0 12px 40px -12px rgb(30 26 20 / 0.25), 0 2px 6px rgb(30 26 20 / 0.06);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  ::selection {
+    background: rgb(179 156 102 / 0.25);
+  }
+}
+
+@layer components {
+  .field {
+    @apply h-11 w-full rounded-xl border border-line-strong/80 bg-white px-3.5 text-[15px] text-ink placeholder:text-faint outline-none transition focus:border-gold focus:ring-4 focus:ring-gold/15;
+  }
+  textarea.field {
+    @apply h-auto py-2.5 leading-relaxed;
+  }
+  select.field {
+    @apply appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2377736b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.85rem center;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-pop-in {
+  animation: pop-in 140ms ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 160ms ease-out;
+}
