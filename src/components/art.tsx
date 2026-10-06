@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import clsx from 'clsx';
 
 function hash(input: string) {
@@ -21,9 +21,9 @@ function random(seed: number) {
 }
 
 const PALETTES = [
-  { top: '#ffffff', left: '#ecebe8', right: '#dcdad5', line: '#cfccc6' }, // white
-  { top: '#efeaf7', left: '#dcd4ea', right: '#c8bede', line: '#b8acd2' }, // lavender
-  { top: '#f6f1e6', left: '#e7dcc4', right: '#d6c7a5', line: '#c6b48b' }, // sand
+  { top: '#5d5b55', left: '#42413d', right: '#373633', line: '#6c6a63' }, // graphite
+  { top: '#cdb87a', left: '#a08b50', right: '#7f6e3f', line: '#dbc88f' }, // BIM Hive gold
+  { top: '#9b968c', left: '#76726a', right: '#615e57', line: '#aaa59b' }, // stone
 ];
 
 const ISO_X = 0.866;
@@ -39,6 +39,7 @@ function poly(points: (readonly [number, number])[]) {
 
 /** Deterministic isometric "massing model" used as each project's thumbnail. */
 export function PlaceholderArt({ seed, className }: { seed: string; className?: string }) {
+  const skyId = useId();
   const svg = useMemo(() => {
     const rnd = random(hash(seed));
     const boxes: { x: number; y: number; w: number; d: number; h: number; p: (typeof PALETTES)[number] }[] = [];
@@ -71,16 +72,16 @@ export function PlaceholderArt({ seed, className }: { seed: string; className?: 
   return (
     <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" className={clsx('block size-full', className)} aria-hidden>
       <defs>
-        <linearGradient id={`sky-${seed}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f7f6f3" />
-          <stop offset="1" stopColor="#eceae5" />
+        <linearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2d2c29" />
+          <stop offset="1" stopColor="#232220" />
         </linearGradient>
       </defs>
-      <rect width="400" height="250" fill={`url(#sky-${seed})`} />
+      <rect width="400" height="250" fill={`url(#${skyId})`} />
       {/* ground plate + roads */}
-      <polygon points={poly([project(-6, -6, 0), project(26, -6, 0), project(26, 26, 0), project(-6, 26, 0)])} fill="#f1efea" />
-      <polyline points={poly([project(-6, 7.2, 0), project(26, 7.2, 0)])} stroke="#e2dfd8" strokeWidth="9" fill="none" />
-      <polyline points={poly([project(7.2, -6, 0), project(7.2, 26, 0)])} stroke="#e2dfd8" strokeWidth="9" fill="none" />
+      <polygon points={poly([project(-6, -6, 0), project(26, -6, 0), project(26, 26, 0), project(-6, 26, 0)])} fill="#2f2e2b" />
+      <polyline points={poly([project(-6, 7.2, 0), project(26, 7.2, 0)])} stroke="#393834" strokeWidth="9" fill="none" />
+      <polyline points={poly([project(7.2, -6, 0), project(7.2, 26, 0)])} stroke="#393834" strokeWidth="9" fill="none" />
       {svg.trees
         .filter((t) => t.y < 4 || t.x < 4)
         .map((t, i) => (
@@ -116,22 +117,19 @@ function Tree({ x, y, r }: { x: number; y: number; r: number }) {
   const [cx, cy] = project(x, y, 0);
   return (
     <g>
-      <ellipse cx={cx + 2} cy={cy + 1} rx={r * 0.8} ry={r * 0.35} fill="#000" opacity="0.06" />
-      <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.9} stroke="#9d8f78" strokeWidth="1.2" />
-      <circle cx={cx} cy={cy - r * 1.2} r={r * 0.75} fill="#a9bf98" />
-      <circle cx={cx - r * 0.25} cy={cy - r * 1.4} r={r * 0.45} fill="#bfd1ae" />
+      <ellipse cx={cx + 2} cy={cy + 1} rx={r * 0.8} ry={r * 0.35} fill="#000" opacity="0.25" />
+      <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.9} stroke="#6d6556" strokeWidth="1.2" />
+      <circle cx={cx} cy={cy - r * 1.2} r={r * 0.75} fill="#5f7758" />
+      <circle cx={cx - r * 0.25} cy={cy - r * 1.4} r={r * 0.45} fill="#79926e" />
     </g>
   );
 }
 
+/** The BIM Hive building mark, traced from the brand logo. */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden>
-      <g stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M7 27V9.5L12 6v21" />
-        <path d="M12 27V14h4.5c4.7 0 8.5 3.8 8.5 8.5V27" />
-        <path d="M18 27v-5" />
-      </g>
+    <svg viewBox="0 0 685 842" fill="currentColor" fillRule="evenodd" className={className} aria-hidden>
+      <path d="M0 842V141L244 0l245 141v229l196 112v244L484 842h-88V597l47-27 46 27v134l104-60V537L443 450l-152 87v305h-93V135L93 195v647ZM291 135l105 60v175l-105 59Z" />
     </svg>
   );
 }

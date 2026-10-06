@@ -3,6 +3,7 @@ import path from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
 import express, { type RequestHandler } from 'express';
 import compression from 'compression';
+import { authRouter, requireSession } from './auth.js';
 import { config } from './config.js';
 import { pool } from './db.js';
 import { runMigrations } from './migrations.js';
@@ -54,8 +55,10 @@ const api = express.Router();
 api.use(express.json({ limit: '1mb' }));
 api.use(noStore);
 api.get('/config', (_req, res) => {
-  res.json({ appName: config.appName });
+  res.json({ appName: config.appName, authConfigured: config.accounts.length > 0 });
 });
+api.use(authRouter);
+api.use(requireSession);
 api.use(projectsRouter);
 api.use(checklistRouter);
 api.use(activityRouter);
@@ -93,6 +96,9 @@ async function start() {
 
   const server = app.listen(config.port, () => {
     console.log(`[server] ${config.appName} tracker listening on port ${config.port}`);
+    if (!config.accounts.length) {
+      console.warn('[auth] no accounts configured: set TRACKER_ADMIN_PASSWORD and TRACKER_VIEWER_PASSWORD so people can sign in');
+    }
   });
 
   const shutdown = () => {

@@ -24,6 +24,17 @@ export const config = {
   /** Optional shared password. When set, the whole dashboard sits behind HTTP Basic auth. */
   basicAuthUser: str('BASIC_AUTH_USER') ?? 'admin',
   basicAuthPassword: str('BASIC_AUTH_PASSWORD'),
+
+  /** Sign-in accounts. An account is only enabled when its password is set. */
+  accounts: [
+    { username: str('TRACKER_ADMIN_USERNAME') ?? 'admin', password: str('TRACKER_ADMIN_PASSWORD'), role: 'admin' as const },
+    { username: str('TRACKER_VIEWER_USERNAME') ?? 'viewer', password: str('TRACKER_VIEWER_PASSWORD'), role: 'viewer' as const },
+  ].filter((account): account is Account => !!account.password),
+  /** Optional extra secret mixed into session signatures. */
+  sessionSecret: str('TRACKER_SESSION_SECRET') ?? '',
 };
+
+export type Role = 'admin' | 'viewer';
+export type Account = { username: string; password: string; role: Role };
 
 export type AppConfig = typeof config;

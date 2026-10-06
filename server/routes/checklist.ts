@@ -18,6 +18,11 @@ const itemFields = {
 const createSchema = z.object(itemFields);
 const updateSchema = z.object({ ...itemFields, title: itemFields.title.optional() });
 
+/** Every project's checklist in one go, for the portfolio overview. */
+checklistRouter.get('/checklist', async (_req, res) => {
+  res.json(await query('SELECT * FROM checklist_items ORDER BY project_id, position ASC, created_at ASC'));
+});
+
 async function ensureProject(id: string) {
   const project = await queryOne('SELECT id FROM projects WHERE id = $1', [id]);
   if (!project) throw notFound('Project');

@@ -76,23 +76,23 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
           }
         />
         {createPortal(
-          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4">
+          <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[60] flex flex-col items-center gap-2 px-4" aria-live="polite">
             {toasts.map((t) => (
               <div
                 key={t.id}
                 role="status"
                 className={clsx(
-                  'animate-pop-in pointer-events-auto flex max-w-md items-start gap-2.5 rounded-2xl px-4 py-3 text-[14px] shadow-pop',
-                  t.tone === 'error' ? 'bg-[#2b1513] text-white' : 'bg-ink text-white',
+                  'animate-pop-in pointer-events-auto flex max-w-md items-start gap-2.5 border px-4 py-3 text-[13.5px] text-ink shadow-pop',
+                  t.tone === 'error' ? 'border-danger/30 bg-[#3a2420]' : 'border-line-strong/70 bg-raised',
                 )}
               >
                 {t.tone === 'error' ? (
-                  <CircleAlert className="mt-0.5 size-4 shrink-0 text-[#ff9d92]" />
+                  <CircleAlert className="mt-0.5 size-4 shrink-0 text-danger" />
                 ) : (
-                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-[#9fd4a5]" />
+                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" />
                 )}
                 <span className="whitespace-pre-line">{t.message}</span>
-                <button onClick={() => dismiss(t.id)} className="-mr-1 ml-1 text-white/50 hover:text-white" aria-label="Dismiss">
+                <button onClick={() => dismiss(t.id)} className="-mr-1 ml-1 text-faint hover:text-ink" aria-label="Dismiss">
                   <X className="size-4" />
                 </button>
               </div>

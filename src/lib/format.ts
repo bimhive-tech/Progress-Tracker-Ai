@@ -4,7 +4,6 @@ const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2
 const shortDateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 const dateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-const relFmt = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -32,6 +31,15 @@ export function formatDate(value: string | null | undefined) {
   return dateFmt.format(parseDate(value));
 }
 
+/** Compact date: "Today", "Yesterday", "Sep 16" (this year) or "Sep 16, 2025". */
+export function formatDay(value: string) {
+  const date = parseDate(value);
+  const diff = dayDiff(date);
+  if (diff === 0) return 'Today';
+  if (diff === -1) return 'Yesterday';
+  return date.getFullYear() === new Date().getFullYear() ? shortDateFmt.format(date) : dateFmt.format(date);
+}
+
 /** "Today, 10:31 AM" · "Yesterday, 4:02 PM" · "Oct 3, 2026" */
 export function formatDateSmart(iso: string) {
   const date = new Date(iso);
@@ -57,17 +65,6 @@ export function dayLabel(iso: string) {
   if (diff === 0) return 'Today';
   if (diff === -1) return 'Yesterday';
   return date.getFullYear() === new Date().getFullYear() ? weekdayFmt.format(date) : dateFmt.format(date);
-}
-
-export function relativeTime(iso: string) {
-  const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  const abs = Math.abs(seconds);
-  if (abs < 45) return 'just now';
-  if (abs < 3600) return relFmt.format(Math.round(seconds / 60), 'minute');
-  if (abs < DAY / 1000) return relFmt.format(Math.round(seconds / 3600), 'hour');
-  if (abs < (30 * DAY) / 1000) return relFmt.format(Math.round(seconds / 86400), 'day');
-  if (abs < (365 * DAY) / 1000) return relFmt.format(Math.round(seconds / (30 * 86400)), 'month');
-  return relFmt.format(Math.round(seconds / (365 * 86400)), 'year');
 }
 
 export type DueInfo = { label: string; tone: 'muted' | 'ok' | 'warn' | 'late' };

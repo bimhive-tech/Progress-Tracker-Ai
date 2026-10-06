@@ -1,45 +1,57 @@
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/source-serif-4/opsz.css';
 @import 'tailwindcss';
 
 @theme {
   --breakpoint-xs: 30rem;
-  --breakpoint-wide: 87.5rem;
 
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Source Serif 4 Variable', ui-serif, Georgia, 'Times New Roman', serif;
 
-  --color-canvas: #f4f3f0;
-  --color-surface: #ffffff;
-  --color-subtle: #faf9f7;
-  --color-sand: #efebe3;
-  --color-line: #ece9e4;
-  --color-line-strong: #dcd8d0;
-  --color-ink: #1b1a17;
-  --color-ink-soft: #3b3934;
-  --color-muted: #77736b;
-  --color-faint: #a7a299;
+  /* Warm dark surfaces, darkest → lightest */
+  --color-sidebar: #1f1e1d;
+  --color-canvas: #262624;
+  --color-surface: #2c2b28;
+  --color-raised: #353430;
 
-  --color-gold: #b39c66;
-  --color-gold-strong: #988249;
-  --color-gold-soft: #f4eedf;
-  --color-gold-wash: #faf7f0;
+  --color-line: #393834;
+  --color-line-strong: #4b4944;
 
-  --color-success: #2f7d3b;
-  --color-success-soft: #e7f2e7;
-  --color-danger: #c63b30;
-  --color-danger-soft: #fcebe9;
+  --color-ink: #f5f4ef;
+  --color-ink-soft: #d3d1c7;
+  --color-muted: #a6a49a;
+  --color-faint: #8e8c84;
 
-  --shadow-card: 0 1px 2px rgb(30 26 20 / 0.03), 0 10px 30px -18px rgb(30 26 20 / 0.12);
-  --shadow-pop: 0 12px 40px -12px rgb(30 26 20 / 0.25), 0 2px 6px rgb(30 26 20 / 0.06);
+  /* BIM Hive gold (from the logo) */
+  --color-accent: #baa361;
+  --color-accent-text: #cbb57a;
+  --color-accent-ink: #1f1e1d;
+  --color-accent-button: #baa361;
+  --color-accent-button-hover: #c9b274;
+  --color-accent-soft: rgb(186 163 97 / 0.17);
+  --color-accent-wash: rgb(186 163 97 / 0.07);
+
+  --color-success: #90c48c;
+  --color-success-solid: #5f9a5b;
+  --color-success-soft: rgb(144 196 140 / 0.14);
+  --color-warn: #e7a85a;
+  --color-danger: #f08a7e;
+  --color-danger-solid: #c8493c;
+  --color-danger-soft: rgb(240 138 126 / 0.13);
+
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.025), 0 10px 30px -18px rgb(0 0 0 / 0.6);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.06), 0 18px 50px -12px rgb(0 0 0 / 0.65), 0 4px 12px rgb(0 0 0 / 0.25);
 }
 
 @layer base {
   html {
+    color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
   body {
-    background: var(--color-canvas);
+    background: var(--color-sidebar);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-feature-settings: 'cv11', 'ss01';
@@ -52,21 +64,33 @@
     cursor: not-allowed;
   }
   ::selection {
-    background: rgb(179 156 102 / 0.25);
+    background: rgb(186 163 97 / 0.35);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #4b4944 transparent;
   }
 }
 
 @layer components {
   .field {
-    @apply h-11 w-full rounded-xl border border-line-strong/80 bg-white px-3.5 text-[15px] text-ink placeholder:text-faint outline-none transition focus:border-gold focus:ring-4 focus:ring-gold/15;
+    @apply h-10 w-full border border-line-strong bg-sidebar px-3 text-[14px] text-ink placeholder:text-faint outline-none transition focus:border-accent/70 focus:ring-3 focus:ring-accent/15;
   }
   textarea.field {
     @apply h-auto py-2.5 leading-relaxed;
   }
   select.field {
     @apply appearance-none bg-no-repeat pr-10;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2377736b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-position: right 0.85rem center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a6a49a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+  }
+  input[type='date'].field::-webkit-calendar-picker-indicator,
+  input[type='datetime-local'].field::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+    cursor: pointer;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold tracking-[0.08em] text-faint uppercase;
   }
 }
 
@@ -98,4 +122,21 @@
 }
 .animate-fade-in {
   animation: fade-in 160ms ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.animate-slide-in {
+  animation: slide-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop-in,
+  .animate-fade-in,
+  .animate-slide-in {
+    animation: none;
+  }
 }

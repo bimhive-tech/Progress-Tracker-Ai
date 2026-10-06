@@ -51,11 +51,11 @@ export type StatusMeta = {
 export const STATUS_ORDER: ProjectStatus[] = ['not_started', 'processing', 'in_review', 'on_hold', 'completed'];
 
 export const STATUS_META: Record<ProjectStatus, StatusMeta> = {
-  not_started: { label: 'Not started', icon: CircleDashed, fg: '#6f6b63', bg: '#f1efeb', accent: '#b9b4ab' },
-  processing: { label: 'Processing', icon: LoaderCircle, fg: '#c26a22', bg: '#fdf1e5', accent: '#d98a3d' },
-  in_review: { label: 'In review', icon: Clock, fg: '#8d6a17', bg: '#f8f0d9', accent: '#c4a03c' },
-  on_hold: { label: 'On hold', icon: CirclePause, fg: '#5f6b78', bg: '#edf0f3', accent: '#8995a3' },
-  completed: { label: 'Completed', icon: CircleCheck, fg: '#2f7d3b', bg: '#e9f3e9', accent: '#3f8f4b' },
+  not_started: { label: 'Not started', icon: CircleDashed, fg: '#aeaba2', bg: 'rgb(174 171 162 / 0.12)', accent: '#8a877f' },
+  processing: { label: 'Processing', icon: LoaderCircle, fg: '#7fb3e8', bg: 'rgb(127 179 232 / 0.13)', accent: '#5f9bd8' },
+  in_review: { label: 'In review', icon: Clock, fg: '#b7a3ee', bg: 'rgb(183 163 238 / 0.13)', accent: '#9a83e0' },
+  on_hold: { label: 'On hold', icon: CirclePause, fg: '#e49b6c', bg: 'rgb(228 155 108 / 0.13)', accent: '#d5824f' },
+  completed: { label: 'Completed', icon: CircleCheck, fg: '#90c48c', bg: 'rgb(144 196 140 / 0.13)', accent: '#6fa86b' },
 };
 
 /** Icons offered for checklist steps and templates. Keys are stored in the database. */

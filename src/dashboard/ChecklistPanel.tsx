@@ -15,14 +15,15 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { api, type ChecklistInput } from '../../lib/api';
-import { formatStamp } from '../../lib/format';
-import { queryKeys, useRefreshProject, useTemplates } from '../../lib/hooks';
-import { stepIcon } from '../../lib/meta';
-import type { ChecklistItem, ChecklistState, Project, ProjectDetail } from '../../lib/types';
-import { useConfirm, useToast } from '../feedback';
-import { IconPicker } from '../IconPicker';
-import { Button, Card, Field, Menu, MenuDivider, MenuItem, MenuLabel, Modal, Segmented } from '../ui';
+import { api, type ChecklistInput } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { formatStamp } from '../lib/format';
+import { queryKeys, useRefreshProject, useTemplates } from '../lib/hooks';
+import { stepIcon } from '../lib/meta';
+import type { ChecklistItem, ChecklistState, Project, ProjectDetail } from '../lib/types';
+import { useConfirm, useToast } from '../components/feedback';
+import { IconPicker } from '../components/IconPicker';
+import { Button, Card, Field, Menu, MenuDivider, MenuItem, MenuLabel, Modal, PanelHeader, Segmented } from '../components/ui';
 
 function applyLocally(item: ChecklistItem, input: ChecklistInput): ChecklistItem {
   const next = { ...item, ...input } as ChecklistItem;
@@ -44,6 +45,7 @@ export function ChecklistPanel({ project, items, className }: { project: Project
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const { canEdit } = useAuth();
   const dragId = useRef<string | null>(null);
   const qc = useQueryClient();
   const refresh = useRefreshProject();
@@ -122,8 +124,7 @@ export function ChecklistPanel({ project, items, className }: { project: Project
     onError: toast.error,
   });
 
-  const toggle = (item: ChecklistItem) =>
-    update.mutate({ id: item.id, input: { state: item.state === 'done' ? 'pending' : 'done' } });
+  const toggle = (item: ChecklistItem) => update.mutate({ id: item.id, input: { state: item.state === 'done' ? 'pending' : 'done' } });
 
   const move = (item: ChecklistItem, delta: number) => {
     const index = order.findIndex((i) => i.id === item.id);
@@ -137,7 +138,12 @@ export function ChecklistPanel({ project, items, className }: { project: Project
   };
 
   const deleteItem = async (item: ChecklistItem) => {
-    const ok = await confirm({ title: 'Delete this step?', message: `“${item.title}” will be removed from the checklist.`, confirmLabel: 'Delete', danger: true });
+    const ok = await confirm({
+      title: 'Delete this step?',
+      message: `“${item.title}” will be removed from the checklist.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
     if (ok) {
       setEditingId(null);
       remove.mutate(item.id);
@@ -147,60 +153,77 @@ export function ChecklistPanel({ project, items, className }: { project: Project
   const done = items.filter((i) => i.state === 'done').length;
 
   return (
-    <Card className={clsx('p-5 sm:p-6', className)}>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-baseline gap-2.5">
-          <h2 className="text-[21px] font-semibold tracking-[-0.02em]">Checklist</h2>
-          {items.length > 0 && (
-            <span className="text-[14px] text-muted tabular-nums">
-              {done}/{items.length}
-            </span>
-          )}
-        </div>
-        <Menu
-          label="Checklist options"
-          panelClassName="w-64"
-          trigger={
-            <span className="grid size-9 place-items-center rounded-xl text-muted transition hover:bg-black/[0.04] hover:text-ink">
-              <Ellipsis className="size-5" />
-            </span>
-          }
-        >
-          <MenuLabel>Add steps from a template</MenuLabel>
-          {templates?.length ? (
-            templates.map((t) => (
-              <MenuItem key={t.id} icon={ListChecks} onSelect={() => applyTemplate.mutate(t.id)} hint={`${t.items.length}`}>
-                {t.name}
-              </MenuItem>
-            ))
-          ) : (
-            <div className="px-3 py-2 text-[13px] text-muted">No templates yet</div>
-          )}
-          {items.length > 0 && (
+    <Card className={clsx('p-4 sm:p-5', className)}>
+      <PanelHeader
+        title="Checklist"
+        icon={ListChecks}
+        meta={items.length > 0 ? `${done} of ${items.length} done` : undefined}
+        className="mb-2"
+        actions={
+          canEdit && (
             <>
-              <MenuDivider />
-              <MenuItem icon={BookmarkPlus} onSelect={() => setSaveAsOpen(true)}>
-                Save as template…
-              </MenuItem>
+              {order.length > 0 && !adding && (
+                <Button size="sm" variant="ghost" icon={Plus} onClick={() => setAdding(true)}>
+                  Add step
+                </Button>
+              )}
+              <Menu
+                label="Checklist options"
+                panelClassName="w-64"
+                trigger={
+                  <span className="grid size-8 place-items-center text-muted transition hover:bg-white/[0.07] hover:text-ink">
+                    <Ellipsis className="size-[18px]" />
+                  </span>
+                }
+              >
+                <MenuLabel>Add steps from a template</MenuLabel>
+                {templates?.length ? (
+                  templates.map((t) => (
+                    <MenuItem key={t.id} icon={ListChecks} onSelect={() => applyTemplate.mutate(t.id)} hint={`${t.items.length}`}>
+                      {t.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <div className="px-2.5 py-2 text-[13px] text-muted">No templates yet</div>
+                )}
+                {items.length > 0 && (
+                  <>
+                    <MenuDivider />
+                    <MenuItem icon={BookmarkPlus} onSelect={() => setSaveAsOpen(true)}>
+                      Save as template…
+                    </MenuItem>
+                  </>
+                )}
+              </Menu>
             </>
-          )}
-        </Menu>
-      </div>
+          )
+        }
+      />
 
       {order.length === 0 && !adding ? (
-        <div className="rounded-2xl border border-dashed border-line-strong px-4 py-7 text-center">
+        <div className="mt-2 border border-dashed border-line-strong px-4 py-7 text-center">
           <p className="font-medium text-ink">No steps yet</p>
-          <p className="mt-1 text-[14px] text-muted">Start from a template or add your own steps.</p>
-          <div className="mt-4 flex flex-col gap-2">
-            {templates?.map((t) => (
-              <Button key={t.id} size="sm" icon={ListChecks} onClick={() => applyTemplate.mutate(t.id)} loading={applyTemplate.isPending && applyTemplate.variables === t.id}>
-                {t.name}
+          <p className="mt-1 text-[13.5px] text-muted">
+            {canEdit ? 'Start from a template or add your own steps.' : 'An admin can add a checklist to this project.'}
+          </p>
+          {canEdit && (
+            <div className="mx-auto mt-4 flex max-w-xs flex-col gap-2">
+              {templates?.map((t) => (
+                <Button
+                  key={t.id}
+                  size="sm"
+                  icon={ListChecks}
+                  onClick={() => applyTemplate.mutate(t.id)}
+                  loading={applyTemplate.isPending && applyTemplate.variables === t.id}
+                >
+                  {t.name}
+                </Button>
+              ))}
+              <Button size="sm" variant="ghost" icon={Plus} onClick={() => setAdding(true)}>
+                Add a step
               </Button>
-            ))}
-            <Button size="sm" variant="ghost" icon={Plus} onClick={() => setAdding(true)}>
-              Add a step
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       ) : (
         <ol>
@@ -211,7 +234,7 @@ export function ChecklistPanel({ project, items, className }: { project: Project
               <li
                 key={item.id}
                 className="relative"
-                draggable={!editing}
+                draggable={canEdit && !editing}
                 onDragStart={(event) => {
                   dragId.current = item.id;
                   event.dataTransfer.effectAllowed = 'move';
@@ -253,7 +276,7 @@ export function ChecklistPanel({ project, items, className }: { project: Project
                 ) : (
                   <StepRow
                     item={item}
-                    last={!next}
+                    readOnly={!canEdit}
                     onToggle={() => toggle(item)}
                     onEdit={() => setEditingId(item.id)}
                     onSetState={(state) => update.mutate({ id: item.id, input: { state } })}
@@ -269,23 +292,16 @@ export function ChecklistPanel({ project, items, className }: { project: Project
         </ol>
       )}
 
-      {adding ? (
+      {adding && canEdit && (
         <AddStepForm
-          onAdd={(title) => add.mutateAsync({ title }).then(() => true, () => false)}
+          onAdd={(title) =>
+            add.mutateAsync({ title }).then(
+              () => true,
+              () => false,
+            )
+          }
           onClose={() => setAdding(false)}
         />
-      ) : (
-        order.length > 0 && (
-          <button
-            onClick={() => setAdding(true)}
-            className="mt-1 flex w-full items-center gap-4 rounded-2xl px-3 py-2.5 text-[15px] text-muted transition hover:bg-subtle hover:text-ink"
-          >
-            <span className="grid size-[34px] place-items-center rounded-full border border-dashed border-line-strong">
-              <Plus className="size-4" />
-            </span>
-            Add step
-          </button>
-        )
       )}
 
       <SaveAsTemplateModal open={saveAsOpen} onClose={() => setSaveAsOpen(false)} items={items} projectName={project.name} />
@@ -299,46 +315,48 @@ function Connector({ from, to }: { from: ChecklistState; to: ChecklistState }) {
     <span
       aria-hidden
       className={clsx(
-        'pointer-events-none absolute top-[46px] bottom-[-14px] left-[29px] w-0',
-        solid ? 'border-l-2' : 'border-l-2 border-dashed border-[#dcd8d0]',
-        solid && (to === 'done' ? 'border-[#9cc29e]' : 'border-[#cdb987]'),
+        'pointer-events-none absolute top-[42px] bottom-[-10px] left-[27px] w-0 border-l-2',
+        solid ? (to === 'done' ? 'border-success-solid/60' : 'border-accent/55') : 'border-dashed border-line-strong',
       )}
     />
   );
 }
 
-function StateCircle({ state, onClick }: { state: ChecklistState; onClick: () => void }) {
+function StateCircle({ state, onClick }: { state: ChecklistState; onClick?: () => void }) {
+  const label = state === 'done' ? 'Mark as not done' : 'Mark as done';
+  const Tag = onClick ? 'button' : 'span';
   return (
-    <button
+    <Tag
       onClick={onClick}
-      aria-label={state === 'done' ? 'Mark as not done' : 'Mark as done'}
-      title={state === 'done' ? 'Mark as not done' : 'Mark as done'}
+      aria-label={onClick ? label : undefined}
+      title={onClick ? label : undefined}
       className={clsx(
-        'group/circle relative z-10 grid size-[36px] shrink-0 place-items-center rounded-full transition',
-        state === 'done' && 'bg-[#e3eee2]',
-        state === 'in_progress' && 'bg-[#efe6cf]',
-        state === 'pending' && 'bg-[#f1f0ec] hover:bg-[#e9f1e8]',
+        'group/circle relative z-10 grid size-8 shrink-0 place-items-center rounded-full transition',
+        state === 'done' && 'bg-success-soft',
+        state === 'in_progress' && 'bg-accent-soft',
+        state === 'pending' && 'bg-white/[0.05]',
+        state === 'pending' && onClick && 'hover:bg-success-soft',
       )}
     >
       {state === 'done' ? (
-        <span className="grid size-[24px] place-items-center rounded-full bg-success text-white shadow-[0_2px_6px_-1px_rgb(47_125_59/0.5)]">
+        <span className="grid size-[22px] place-items-center rounded-full bg-success-solid text-white">
           <Check className="size-3.5" strokeWidth={3} />
         </span>
       ) : state === 'in_progress' ? (
-        <span className="size-[20px] rounded-full bg-gold shadow-[0_2px_6px_-1px_rgb(152_130_73/0.6)]" />
+        <span className="size-[16px] rounded-full bg-accent shadow-[0_0_0_4px_rgb(186_163_97/0.2)]" />
       ) : (
         <>
-          <span className="size-[16px] rounded-full bg-[#d6d3cc] transition group-hover/circle:opacity-0" />
-          <Check className="absolute size-4 text-success opacity-0 transition group-hover/circle:opacity-100" strokeWidth={2.6} />
+          <span className={clsx('size-[12px] rounded-full bg-line-strong transition', onClick && 'group-hover/circle:opacity-0')} />
+          {onClick && <Check className="absolute size-4 text-success opacity-0 transition group-hover/circle:opacity-100" strokeWidth={2.6} />}
         </>
       )}
-    </button>
+    </Tag>
   );
 }
 
 function StepRow({
   item,
-  last,
+  readOnly,
   onToggle,
   onEdit,
   onSetState,
@@ -348,7 +366,7 @@ function StepRow({
   canMoveDown,
 }: {
   item: ChecklistItem;
-  last: boolean;
+  readOnly: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onSetState: (state: ChecklistState) => void;
@@ -358,76 +376,92 @@ function StepRow({
   canMoveDown: boolean;
 }) {
   const Icon = stepIcon(item.icon);
+  const Body = readOnly ? 'div' : 'button';
   const sub =
     item.state === 'done' ? (
       <span className="text-muted">Completed{item.completed_at ? ` · ${formatStamp(item.completed_at)}` : ''}</span>
     ) : item.state === 'in_progress' ? (
-      <span className="text-gold-strong">In progress · {item.progress}%</span>
+      <span className="font-medium text-accent-text">In progress · {item.progress}%</span>
     ) : (
       <span className="text-faint">Pending</span>
     );
 
   return (
-    <div className={clsx('group relative flex items-center gap-4 rounded-2xl px-3 py-3 transition', item.state === 'in_progress' ? 'bg-gold-wash' : 'hover:bg-subtle/80')}>
-      <GripVertical className="absolute top-1/2 -left-1.5 size-4 -translate-y-1/2 cursor-grab text-faint opacity-0 transition group-hover:opacity-100" />
-      <StateCircle state={item.state} onClick={onToggle} />
-      <button onClick={onEdit} className="min-w-0 flex-1 text-left">
-        <span className={clsx('block text-[15.5px] leading-snug font-medium', item.state === 'done' ? 'text-ink' : item.state === 'pending' ? 'text-ink-soft' : 'text-ink')}>
+    <div
+      className={clsx(
+        'group relative flex items-start gap-3.5 px-3 py-2.5 transition',
+        item.state === 'in_progress' ? 'bg-accent-wash' : 'hover:bg-white/[0.03]',
+      )}
+    >
+      {!readOnly && (
+        <GripVertical className="absolute top-[18px] -left-1.5 size-4 cursor-grab text-faint opacity-0 transition group-hover:opacity-100" />
+      )}
+      <StateCircle state={item.state} onClick={readOnly ? undefined : onToggle} />
+      <Body onClick={readOnly ? undefined : onEdit} className="min-h-8 min-w-0 flex-1 self-center text-left">
+        <span className={clsx('block text-[14.5px] leading-snug font-medium', item.state === 'pending' ? 'text-ink-soft' : 'text-ink')}>
           {item.title}
         </span>
-        <span className="mt-0.5 block text-[13px]">{sub}</span>
+        <span className="mt-0.5 block text-[12.5px]">{sub}</span>
         {item.note && <span className="mt-0.5 block truncate text-[12.5px] text-faint">{item.note}</span>}
-      </button>
-      <div className="relative size-9 shrink-0">
-        <Icon
-          className="absolute inset-0 m-auto size-[22px] text-ink-soft transition group-focus-within:opacity-0 group-hover:opacity-0 [@media(hover:none)]:opacity-0"
-          strokeWidth={1.5}
-        />
-        <div className="absolute inset-0 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
-          <Menu
-            label="Step options"
-            trigger={
-              <span className="grid size-9 place-items-center rounded-xl text-muted hover:bg-black/[0.05] hover:text-ink">
-                <Ellipsis className="size-5" />
-              </span>
-            }
-          >
-            <MenuItem icon={Pencil} onSelect={onEdit}>
-              Edit step
-            </MenuItem>
-            {item.state !== 'done' && (
-              <MenuItem icon={Check} onSelect={() => onSetState('done')}>
-                Mark done
+        {item.state === 'in_progress' && (
+          <span className="mt-2 block h-1 max-w-48 overflow-hidden bg-accent-soft">
+            <span className="block h-full bg-accent" style={{ width: `${item.progress}%` }} />
+          </span>
+        )}
+      </Body>
+      {readOnly ? (
+        <Icon className="m-[7px] size-[18px] shrink-0 text-faint" strokeWidth={1.6} />
+      ) : (
+        <div className="relative size-8 shrink-0">
+          <Icon
+            className="absolute inset-0 m-auto size-[18px] text-faint transition group-focus-within:opacity-0 group-hover:opacity-0 [@media(hover:none)]:opacity-0"
+            strokeWidth={1.6}
+          />
+          <div className="absolute inset-0 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+            <Menu
+              label="Step options"
+              trigger={
+                <span className="grid size-8 place-items-center text-muted hover:bg-white/[0.07] hover:text-ink">
+                  <Ellipsis className="size-[18px]" />
+                </span>
+              }
+            >
+              <MenuItem icon={Pencil} onSelect={onEdit}>
+                Edit step
               </MenuItem>
-            )}
-            {item.state !== 'in_progress' && (
-              <MenuItem icon={CircleDot} onSelect={() => onSetState('in_progress')}>
-                Mark in progress
+              {item.state !== 'done' && (
+                <MenuItem icon={Check} onSelect={() => onSetState('done')}>
+                  Mark done
+                </MenuItem>
+              )}
+              {item.state !== 'in_progress' && (
+                <MenuItem icon={CircleDot} onSelect={() => onSetState('in_progress')}>
+                  Mark in progress
+                </MenuItem>
+              )}
+              {item.state !== 'pending' && (
+                <MenuItem icon={RotateCcw} onSelect={() => onSetState('pending')}>
+                  Reset to pending
+                </MenuItem>
+              )}
+              <MenuDivider />
+              {canMoveUp && (
+                <MenuItem icon={ArrowUp} onSelect={() => onMove(-1)}>
+                  Move up
+                </MenuItem>
+              )}
+              {canMoveDown && (
+                <MenuItem icon={ArrowDown} onSelect={() => onMove(1)}>
+                  Move down
+                </MenuItem>
+              )}
+              <MenuItem icon={Trash2} danger onSelect={onDelete}>
+                Delete
               </MenuItem>
-            )}
-            {item.state !== 'pending' && (
-              <MenuItem icon={RotateCcw} onSelect={() => onSetState('pending')}>
-                Reset to pending
-              </MenuItem>
-            )}
-            <MenuDivider />
-            {canMoveUp && (
-              <MenuItem icon={ArrowUp} onSelect={() => onMove(-1)}>
-                Move up
-              </MenuItem>
-            )}
-            {canMoveDown && (
-              <MenuItem icon={ArrowDown} onSelect={() => onMove(1)}>
-                Move down
-              </MenuItem>
-            )}
-            <MenuItem icon={Trash2} danger onSelect={onDelete}>
-              Delete
-            </MenuItem>
-          </Menu>
+            </Menu>
+          </div>
         </div>
-      </div>
-      {!last && item.state !== 'in_progress' && <span className="absolute right-3 bottom-0 left-[64px] h-px bg-line" />}
+      )}
     </div>
   );
 }
@@ -462,7 +496,11 @@ function StepEditor({
   };
 
   return (
-    <form onSubmit={submit} onKeyDown={(e) => e.key === 'Escape' && onCancel()} className="animate-pop-in my-1 space-y-3 rounded-2xl border border-line bg-subtle p-3.5">
+    <form
+      onSubmit={submit}
+      onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+      className="animate-pop-in my-1 space-y-3 border border-line-strong bg-raised/60 p-3.5"
+    >
       <div className="flex gap-2">
         <IconPicker value={icon} onChange={setIcon} />
         <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Step title" autoFocus maxLength={200} />
@@ -487,14 +525,14 @@ function StepEditor({
             step={5}
             value={progress}
             onChange={(e) => setProgress(Number(e.target.value))}
-            className="flex-1 accent-[#b39c66]"
+            className="flex-1 accent-[#baa361]"
             aria-label="Progress"
           />
           <span className="w-10 text-right text-sm font-medium tabular-nums">{progress}%</span>
         </div>
       )}
       <div className="flex items-center justify-between gap-2 pt-1">
-        <Button size="sm" variant="ghost" icon={Trash2} onClick={onDelete} className="text-danger hover:bg-danger-soft">
+        <Button size="sm" variant="danger" icon={Trash2} onClick={onDelete}>
           Delete
         </Button>
         <div className="flex gap-2">
@@ -524,7 +562,7 @@ function AddStepForm({ onAdd, onClose }: { onAdd: (title: string) => Promise<boo
   return (
     <form onSubmit={submit} className="mt-2 flex items-center gap-2 px-1">
       <input
-        className="field h-10"
+        className="field"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
@@ -533,7 +571,7 @@ function AddStepForm({ onAdd, onClose }: { onAdd: (title: string) => Promise<boo
         autoFocus
         maxLength={200}
       />
-      <Button size="sm" variant="primary" type="submit" loading={busy} disabled={!title.trim()} className="h-10">
+      <Button variant="primary" type="submit" loading={busy} disabled={!title.trim()} className="h-10">
         Add
       </Button>
     </form>

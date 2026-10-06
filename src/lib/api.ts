@@ -1,6 +1,7 @@
 import type {
   ActivityEntry,
   AppConfig,
+  AuthUser,
   ChecklistItem,
   ChecklistState,
   Project,
@@ -10,6 +11,22 @@ import type {
   TemplateItem,
 } from './types';
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+
+let onUnauthorized: (() => void) | null = null;
+
+/** Called when the session has expired mid-use, so the app can show the sign-in screen again. */
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api${url}`, {
     method,
@@ -18,7 +35,10 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   });
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.error ?? `Request failed (${res.status})`);
+  if (!res.ok) {
+    if (res.status === 401 && !url.startsWith('/auth/')) onUnauthorized?.();
+    throw new ApiError(data?.error ?? `Request failed (${res.status})`, res.status);
+  }
   return data as T;
 }
 
@@ -41,12 +61,17 @@ export type ChecklistInput = {
 export const api = {
   config: () => request<AppConfig>('GET', '/config'),
 
+  me: () => request<AuthUser | null>('GET', '/auth/me'),
+  login: (username: string, password: string) => request<AuthUser>('POST', '/auth/login', { username, password }),
+  logout: () => request<void>('POST', '/auth/logout'),
+
   listProjects: () => request<Project[]>('GET', '/projects'),
   getProject: (id: string) => request<ProjectDetail>('GET', `/projects/${id}`),
   createProject: (input: ProjectInput) => request<Project>('POST', '/projects', input),
   updateProject: (id: string, input: ProjectInput) => request<Project>('PATCH', `/projects/${id}`, input),
   deleteProject: (id: string) => request<void>('DELETE', `/projects/${id}`),
 
+  listChecklists: () => request<ChecklistItem[]>('GET', '/checklist'),
   addChecklistItem: (projectId: string, input: ChecklistInput) =>
     request<ChecklistItem>('POST', `/projects/${projectId}/checklist`, input),
   applyTemplate: (projectId: string, templateId: string) =>

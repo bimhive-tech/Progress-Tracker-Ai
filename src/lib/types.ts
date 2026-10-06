@@ -109,4 +109,11 @@ export interface ProjectDetail {
 
 export interface AppConfig {
   appName: string;
+  /** False until at least one sign-in account has a password set on the server. */
+  authConfigured: boolean;
+}
+
+export interface AuthUser {
+  username: string;
+  role: 'admin' | 'viewer';
 }

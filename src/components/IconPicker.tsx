@@ -13,8 +13,8 @@ export function IconGrid({ value, onChange }: { value: string | null; onChange: 
           aria-label={label}
           onClick={() => onChange(key)}
           className={clsx(
-            'grid size-9 place-items-center rounded-xl transition',
-            value === key ? 'bg-gold-soft text-gold-strong ring-1 ring-gold/40' : 'text-muted hover:bg-[#f3f1ec] hover:text-ink',
+            'grid size-9 place-items-center transition',
+            value === key ? 'bg-accent-soft text-accent ring-1 ring-accent/40' : 'text-muted hover:bg-white/[0.07] hover:text-ink',
           )}
         >
           <Icon className="size-[18px]" strokeWidth={1.7} />
@@ -33,7 +33,7 @@ export function IconPicker({ value, onChange }: { value: string | null; onChange
       label="Choose icon"
       panelClassName="w-auto p-2"
       trigger={
-        <span className="grid size-11 place-items-center rounded-xl border border-line-strong/80 bg-white text-ink-soft transition hover:border-gold">
+        <span className="grid size-10 place-items-center border border-line-strong bg-sidebar text-ink-soft transition hover:border-accent/70">
           <Icon className="size-[18px]" strokeWidth={1.7} />
         </span>
       }

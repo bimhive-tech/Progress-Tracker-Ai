@@ -8,6 +8,7 @@ export const queryKeys = {
   project: (id: string) => ['project', id] as const,
   activity: (params: { limit: number; project_id?: string }) => ['activity', params] as const,
   templates: ['templates'] as const,
+  checklists: ['checklists'] as const,
 };
 
 export function useConfig() {
@@ -20,6 +21,11 @@ export function useProjects() {
 
 export function useProject(id: string) {
   return useQuery({ queryKey: queryKeys.project(id), queryFn: () => api.getProject(id) });
+}
+
+/** Every project's checklist items, for the overview board. */
+export function useChecklists() {
+  return useQuery({ queryKey: queryKeys.checklists, queryFn: api.listChecklists });
 }
 
 export function useTemplates() {
@@ -41,6 +47,7 @@ export function useRefreshProject() {
       Promise.all([
         projectId ? qc.invalidateQueries({ queryKey: queryKeys.project(projectId) }) : null,
         qc.invalidateQueries({ queryKey: queryKeys.projects }),
+        qc.invalidateQueries({ queryKey: queryKeys.checklists }),
         qc.invalidateQueries({ queryKey: ['activity'] }),
       ]),
     [qc],
@@ -81,4 +88,16 @@ export function useLocalSetting(key: string, fallback: string) {
 
 export function useAuthorName() {
   return useLocalSetting('tracker.author', '');
+}
+
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
+    onChange();
+    list.addEventListener('change', onChange);
+    return () => list.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
 }

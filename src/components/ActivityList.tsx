@@ -1,12 +1,13 @@
 import { Fragment } from 'react';
-import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Pencil, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { dayLabel, formatTime } from '../lib/format';
 import { queryKeys, useRefreshProject } from '../lib/hooks';
 import { activityIcon, ACTIVITY_TYPES } from '../lib/meta';
+import { useSelection } from '../lib/selection';
 import type { ActivityEntry, ProjectDetail } from '../lib/types';
 import { PlaceholderArt } from './art';
 import { useConfirm, useToast } from './feedback';
@@ -33,19 +34,19 @@ export function useDeleteActivity() {
   };
 }
 
-/** Activity entries grouped by day. `showProject` adds the project name/thumbnail (for the global feed). */
+/** Activity entries grouped by day. `showProject` adds the project name/thumbnail (for the all-projects feed). */
 export function ActivityList({
   entries,
   onEdit,
   showProject,
-  compact,
 }: {
   entries: ActivityEntry[];
   onEdit: (entry: ActivityEntry) => void;
   showProject?: boolean;
-  compact?: boolean;
 }) {
   const remove = useDeleteActivity();
+  const { canEdit } = useAuth();
+  const { select } = useSelection();
   let lastDay = '';
 
   return (
@@ -57,39 +58,52 @@ export function ActivityList({
         const Icon = activityIcon(entry.type);
         return (
           <Fragment key={entry.id}>
-            {showDay && (
-              <li className={clsx('pb-1 text-[11.5px] font-semibold tracking-wider text-faint uppercase', compact ? 'pt-4 first:pt-1' : 'pt-6 first:pt-1')}>
-                {day}
-              </li>
-            )}
-            <li className="group relative flex gap-3.5 border-b border-line py-3.5 last:border-b-0">
+            {showDay && <li className="eyebrow pt-5 pb-1.5 first:pt-1">{day}</li>}
+            <li className="group relative -mx-2 flex gap-3 px-2 py-2.5 transition hover:bg-white/[0.025]">
               {showProject ? (
-                <Link to={`/projects/${entry.project_id}`} className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-line bg-subtle" title={entry.project_name}>
+                <button
+                  onClick={() => select(entry.project_id)}
+                  className="relative size-9 shrink-0 overflow-hidden border border-line bg-sidebar"
+                  title={`Open ${entry.project_name}`}
+                >
                   <PlaceholderArt seed={entry.project_id} />
-                  <span className="absolute right-0.5 bottom-0.5 grid size-5 place-items-center rounded-md bg-white/95 text-ink-soft shadow-sm">
+                  <span className="absolute -right-px -bottom-px grid size-[18px] place-items-center bg-raised text-ink-soft">
                     <Icon className="size-3" strokeWidth={2} />
                   </span>
-                </Link>
+                </button>
               ) : (
-                <span className="grid size-8 shrink-0 place-items-center text-ink-soft" title={ACTIVITY_TYPES[entry.type]?.label}>
-                  <Icon className="size-[22px]" strokeWidth={1.5} />
+                <span
+                  className="grid size-9 shrink-0 place-items-center border border-line bg-sidebar text-ink-soft"
+                  title={ACTIVITY_TYPES[entry.type]?.label}
+                >
+                  <Icon className="size-[17px]" strokeWidth={1.6} />
                 </span>
               )}
-              <span className="w-[60px] shrink-0 pt-0.5 text-[12.5px] whitespace-nowrap text-faint tabular-nums">{formatTime(entry.occurred_at)}</span>
-              <div className="min-w-0 flex-1 pr-1">
-                <p className="text-[15px] leading-snug font-medium text-ink">{entry.title}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-2">
+                  <p className="min-w-0 flex-1 pt-px text-[14px] leading-snug font-medium text-ink">{entry.title}</p>
+                  <span className="shrink-0 pt-0.5 text-[12px] whitespace-nowrap text-faint tabular-nums">{formatTime(entry.occurred_at)}</span>
+                </div>
                 {showProject && (
-                  <Link to={`/projects/${entry.project_id}`} className="text-[13px] text-gold-strong hover:underline">
+                  <button onClick={() => select(entry.project_id)} className="block max-w-full truncate text-left text-[12.5px] text-accent-text hover:underline">
                     {entry.project_name}
-                  </Link>
+                  </button>
                 )}
-                {entry.details && <p className="mt-0.5 text-[13.5px] leading-relaxed whitespace-pre-line text-muted">{entry.details}</p>}
-                {entry.author && <p className="mt-1 text-[12px] text-faint">by {entry.author}</p>}
+                {entry.details && <p className="mt-0.5 text-[13px] leading-relaxed whitespace-pre-line text-muted">{entry.details}</p>}
+                {entry.author && <p className="mt-0.5 text-[12px] text-faint">by {entry.author}</p>}
               </div>
-              <div className="absolute top-2.5 right-0 flex gap-0.5 rounded-xl bg-white opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:opacity-100 [@media(hover:none)]:shadow-none">
-                <IconButton icon={Pencil} label="Edit entry" onClick={() => onEdit(entry)} />
-                <IconButton icon={Trash2} label="Delete entry" tone="danger" onClick={() => remove(entry)} />
-              </div>
+              {canEdit && (
+                <div
+                  className={clsx(
+                    'absolute top-1.5 right-1 flex gap-0.5 border border-line bg-raised opacity-0 shadow-pop transition',
+                    'group-focus-within:opacity-100 group-hover:opacity-100',
+                    '[@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:border-0 [@media(hover:none)]:bg-transparent [@media(hover:none)]:opacity-100 [@media(hover:none)]:shadow-none',
+                  )}
+                >
+                  <IconButton icon={Pencil} label="Edit entry" onClick={() => onEdit(entry)} className="size-7" />
+                  <IconButton icon={Trash2} label="Delete entry" tone="danger" onClick={() => remove(entry)} className="size-7" />
+                </div>
+              )}
             </li>
           </Fragment>
         );
